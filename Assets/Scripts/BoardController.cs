@@ -1,27 +1,32 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UI;
 
 public class BoardController : MonoBehaviour
 {
     [SerializeField] private GameController gameController;
     [SerializeField] private RectTransform canvasRect;
     [SerializeField] private Tile tile;
-    [SerializeField] private Image boardBG;
-    [SerializeField] private Image gameBG;
 
     GameState state;
 
-    private const int BOARD_WIDTH = 9;
+    private const int BOARD_WIDTH = 8;
 
-    private const float BORDER_WIDTH = 4;
-
-    private const int NUM_BOMBS = 10;
+    private const int NUM_BOMBS = 9;
 
     private const int MAX_REVEALED_TILES = BOARD_WIDTH * BOARD_WIDTH - NUM_BOMBS;
 
+    // Normalized percentage of cell size relative to board screenSize / width
+    private const float CELL_PROPORTION = 0.75f;
+
+    // Normalized percentage of tile size relative to cell size
+    private const float TILE_PROPORTION = 0.8f;
+
+    private const float TILE_REVEAL_DELAY = 0.1f / BOARD_WIDTH;
+
     private int numTilesRevealed = 0;
+
+
 
     private bool[,] bombs = new bool[BOARD_WIDTH, BOARD_WIDTH];
     private Tile[,] tiles = new Tile[BOARD_WIDTH, BOARD_WIDTH];
@@ -37,18 +42,11 @@ public class BoardController : MonoBehaviour
             canvasRect.rect.height
         );
 
-        float cellSize = smallerLength / BOARD_WIDTH * 0.9f;
+        float cellSize = smallerLength / BOARD_WIDTH * CELL_PROPORTION;
 
-        float tileSize = cellSize * 0.9f;
+        float tileSize = cellSize * TILE_PROPORTION;
 
         float startOffset = -1 * (BOARD_WIDTH / 2) * cellSize;
-
-        gameBG.rectTransform.anchoredPosition = Vector2.zero;
-        gameBG.rectTransform.sizeDelta = canvasRect.rect.size;
-
-        float boardSize = cellSize * BOARD_WIDTH + (BORDER_WIDTH * 2);
-        boardBG.rectTransform.anchoredPosition = Vector2.zero;
-        boardBG.rectTransform.sizeDelta = new Vector2(boardSize + BORDER_WIDTH, boardSize + BORDER_WIDTH);
 
         for (int row = 0; row < BOARD_WIDTH; row++)
         {
@@ -68,7 +66,7 @@ public class BoardController : MonoBehaviour
 
     public void TileClicked(Tile clickedTile)
     {
-        if (state == GameState.GameOver)
+        if (state != GameState.Ready && state != GameState.Playing)
             return;
 
         if (state == GameState.Ready) {
@@ -233,10 +231,13 @@ public class BoardController : MonoBehaviour
                     }
                 }
             }
-            yield return new WaitForSeconds(0.01f);
+            yield return new WaitForSeconds(TILE_REVEAL_DELAY);
         }
 
-        state = GameState.Playing;
+        if (state == GameState.Waiting)
+        {
+            state = GameState.Playing;
+        }
     }
 
     public void DisableBoardButtons()
@@ -254,6 +255,7 @@ public class BoardController : MonoBehaviour
 
     private void ResetBoard()
     {
+        StopAllCoroutines();
         for (int i = transform.childCount - 1; i >= 0; i--)
         {
             DestroyImmediate(transform.GetChild(i).gameObject);

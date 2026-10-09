@@ -1,10 +1,9 @@
 using UnityEngine;
-using UnityEngine.UIElements;
 
 public class GameController : MonoBehaviour
 {
     [SerializeField] private BoardController board;
-    [SerializeField] private GameObject mainMenu;
+    [SerializeField] private GameObject restartButton;
     [SerializeField] private GameObject winScreen;
     [SerializeField] private GameObject loseScreen;
 
@@ -15,28 +14,21 @@ public class GameController : MonoBehaviour
 
     public void StartNewGame()
     {
-        mainMenu.SetActive(false);
         winScreen.SetActive(false);
         loseScreen.SetActive(false);
+        restartButton.SetActive(false);
         board.Setup();
     }
 
     public void ActivateWinScreen()
     {
         winScreen.SetActive(true);
+        restartButton.SetActive(true);
     }
 
     public void ActivateLoseScreen()
     {
         loseScreen.SetActive(true);
-    }
-
-    public void QuitGame()
-    {
-    #if UNITY_EDITOR
-            UnityEditor.EditorApplication.isPlaying = false;
-    #else
-        Application.Quit();
-    #endif
+        restartButton.SetActive(true);
     }
 }

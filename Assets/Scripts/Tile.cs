@@ -26,7 +26,7 @@ public class Tile : MonoBehaviour
         this.col = col;
         this.board = board;
 
-        button.image.color = Color.darkOrange;
+        button.image.color = Color.cadetBlue;
 
         RectTransform rectTransform = GetComponent<RectTransform>();
         RectTransform buttonRectTransform = button.GetComponent<RectTransform>();
