@@ -8,31 +8,39 @@ public class BoardController : MonoBehaviour
     [SerializeField] private RectTransform canvasRect;
     [SerializeField] private Tile tile;
 
-    GameState state;
-
-    private const int BOARD_WIDTH = 8;
-
-    private const int NUM_BOMBS = 9;
-
-    private const int MAX_REVEALED_TILES = BOARD_WIDTH * BOARD_WIDTH - NUM_BOMBS;
-
     // Normalized percentage of cell size relative to board screenSize / width
     private const float CELL_PROPORTION = 0.75f;
 
     // Normalized percentage of tile size relative to cell size
     private const float TILE_PROPORTION = 0.8f;
 
-    private const float TILE_REVEAL_DELAY = 0.1f / BOARD_WIDTH;
+    private const float TILE_REVEAL_DELAY = 0.01f;
 
-    private int numTilesRevealed = 0;
+    private GameState state;
 
+    private Difficulty difficulty = Difficulty.Easy;
 
+    private int boardWidth;
 
-    private bool[,] bombs = new bool[BOARD_WIDTH, BOARD_WIDTH];
-    private Tile[,] tiles = new Tile[BOARD_WIDTH, BOARD_WIDTH];
+    private int numBombs;
+
+    private int maxRevealedTiles;
+
+    private int numTilesRevealed;
+
+    private bool[,] bombs;
+    private Tile[,] tiles;
 
     public void Setup()
     {
+        Setup(difficulty);
+    }
+
+    public void Setup(Difficulty difficulty)
+    {
+        this.difficulty = difficulty;
+        InitializeDifficulty();
+
         state = GameState.Ready;
 
         ResetBoard();
@@ -42,15 +50,15 @@ public class BoardController : MonoBehaviour
             canvasRect.rect.height
         );
 
-        float cellSize = smallerLength / BOARD_WIDTH * CELL_PROPORTION;
+        float cellSize = smallerLength / boardWidth * CELL_PROPORTION;
 
         float tileSize = cellSize * TILE_PROPORTION;
 
-        float startOffset = -1 * (BOARD_WIDTH / 2) * cellSize;
+        float startOffset = -(boardWidth - 1) * cellSize / 2f;
 
-        for (int row = 0; row < BOARD_WIDTH; row++)
+        for (int row = 0; row < boardWidth; row++)
         {
-            for (int col = 0; col < BOARD_WIDTH; col++)
+            for (int col = 0; col < boardWidth; col++)
             {
                 float x = startOffset + (col * cellSize);
                 float y = startOffset + (row * cellSize);
@@ -77,16 +85,40 @@ public class BoardController : MonoBehaviour
         RevealTile(clickedTile);
     }
 
+    private void InitializeDifficulty()
+    {
+        switch (difficulty)
+        {
+            case Difficulty.Easy:
+                boardWidth = 8;
+                numBombs = 8;
+                break;
+
+            case Difficulty.Normal:
+                boardWidth = 10;
+                numBombs = 16;
+                break;
+
+            default:
+                boardWidth = 12;
+                numBombs = 30;
+                break;
+
+        }
+
+        maxRevealedTiles = boardWidth * boardWidth - numBombs;
+}
+
     private void GenerateBombs(Tile clickedTile)
     {
         int rowT = clickedTile.row;
         int colT = clickedTile.col;
 
         int bombsPlaced = 0;
-        while (bombsPlaced < NUM_BOMBS)
+        while (bombsPlaced < numBombs)
         {
-            int randRow = Random.Range(0, BOARD_WIDTH);
-            int randCol = Random.Range(0, BOARD_WIDTH);
+            int randRow = Random.Range(0, boardWidth);
+            int randCol = Random.Range(0, boardWidth);
 
             if (randRow == rowT && randCol == colT) continue;
 
@@ -125,7 +157,7 @@ public class BoardController : MonoBehaviour
     private void IncremenetRevealedTiles()
     {
         numTilesRevealed++;
-        if (numTilesRevealed >= MAX_REVEALED_TILES)
+        if (numTilesRevealed >= maxRevealedTiles)
         {
             WinGame();
         }
@@ -149,9 +181,9 @@ public class BoardController : MonoBehaviour
 
     private void RevealAllBombs()
     {
-        for (int row = 0; row < BOARD_WIDTH; row++)
+        for (int row = 0; row < boardWidth; row++)
         {
-            for (int col = 0; col < BOARD_WIDTH; col++)
+            for (int col = 0; col < boardWidth; col++)
             {
                 if (bombs[row, col] == true)
                 {
@@ -248,21 +280,26 @@ public class BoardController : MonoBehaviour
         }
     }
 
-    private bool IsInBounds(int row, int col)
-    {
-        return (row >= 0 && col >= 0 && row < BOARD_WIDTH && col < BOARD_WIDTH);
-    }
-
-    private void ResetBoard()
+    public void DestroyBoard()
     {
         StopAllCoroutines();
         for (int i = transform.childCount - 1; i >= 0; i--)
         {
             DestroyImmediate(transform.GetChild(i).gameObject);
         }
+    }
 
-        tiles = new Tile[BOARD_WIDTH, BOARD_WIDTH];
-        bombs = new bool[BOARD_WIDTH, BOARD_WIDTH];
+    private bool IsInBounds(int row, int col)
+    {
+        return (row >= 0 && col >= 0 && row < boardWidth && col < boardWidth);
+    }
+
+    private void ResetBoard()
+    {
+        DestroyBoard();
+
+        tiles = new Tile[boardWidth, boardWidth];
+        bombs = new bool[boardWidth, boardWidth];
 
         numTilesRevealed = 0;
     }

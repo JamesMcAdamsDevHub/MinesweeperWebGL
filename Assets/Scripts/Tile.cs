@@ -16,7 +16,7 @@ public class Tile : MonoBehaviour
 
     public int numAdjacentBombs = 0;
 
-    private const char BOMB_CHAR = '*';
+    private const string BOMB = "BOMB";
 
     private BoardController board;
 
@@ -83,7 +83,7 @@ public class Tile : MonoBehaviour
 
     public void RevealBomb()
     {
-        UpdateRevealedTile(BOMB_CHAR.ToString(), Color.red);
+        UpdateRevealedTile(BOMB, Color.red);
     }
 
     public void DisableButton()
@@ -94,7 +94,14 @@ public class Tile : MonoBehaviour
     private void UpdateRevealedTile(string tileText, Color color)
     {
         isRevealed = true;
-        text.text = tileText;
+        if (tileText.Equals(BOMB))
+        {
+            text.text = "*";
+        }
+        else
+        {
+            text.text = tileText;
+        }
         button.image.color = color;
         DisableButton();
     }

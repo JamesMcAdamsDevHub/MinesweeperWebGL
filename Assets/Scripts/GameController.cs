@@ -3,32 +3,50 @@ using UnityEngine;
 public class GameController : MonoBehaviour
 {
     [SerializeField] private BoardController board;
-    [SerializeField] private GameObject restartButton;
+    [SerializeField] private GameObject titleHeader;
+    [SerializeField] private GameObject mainMenu;
     [SerializeField] private GameObject winScreen;
     [SerializeField] private GameObject loseScreen;
 
-    public void Start()
+    public void StartNewGame()
     {
+        DeactivateModals();
         board.Setup();
     }
 
-    public void StartNewGame()
+    public void StartNewGame(string difficultyStr)
     {
-        winScreen.SetActive(false);
-        loseScreen.SetActive(false);
-        restartButton.SetActive(false);
-        board.Setup();
+        DeactivateModals();
+
+        Difficulty difficulty = 
+            DifficultyParser.GetDifficultyFromString(difficultyStr);
+
+        board.Setup(difficulty);
     }
 
     public void ActivateWinScreen()
     {
         winScreen.SetActive(true);
-        restartButton.SetActive(true);
     }
 
     public void ActivateLoseScreen()
     {
         loseScreen.SetActive(true);
-        restartButton.SetActive(true);
+    }
+
+    public void ActivateMainMenu()
+    {
+        DeactivateModals();
+        board.DestroyBoard();
+        mainMenu.SetActive(true);
+        titleHeader.SetActive(false);
+    }
+
+    private void DeactivateModals()
+    {
+        mainMenu.SetActive(false);
+        winScreen.SetActive(false);
+        loseScreen.SetActive(false);
+        titleHeader.SetActive(true);
     }
 }
