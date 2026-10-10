@@ -1,52 +1,58 @@
+using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class GameController : MonoBehaviour
 {
     [SerializeField] private BoardController board;
-    [SerializeField] private GameObject titleHeader;
     [SerializeField] private GameObject mainMenu;
-    [SerializeField] private GameObject winScreen;
-    [SerializeField] private GameObject loseScreen;
+    [SerializeField] private GameObject gameUI;
+    [SerializeField] private TMP_Text bombCountText;
+    [SerializeField] private TMP_Text difficultyText;
+
+    private Difficulty difficulty = Difficulty.Normal;
 
     public void StartNewGame()
     {
-        DeactivateModals();
+        ActivateGameUI();
         board.Setup();
     }
 
     public void StartNewGame(string difficultyStr)
     {
-        DeactivateModals();
-
-        Difficulty difficulty = 
+        difficulty = 
             DifficultyParser.GetDifficultyFromString(difficultyStr);
+
+        ActivateGameUI();
 
         board.Setup(difficulty);
     }
 
     public void ActivateWinScreen()
     {
-        winScreen.SetActive(true);
+        // TODO: Make win game effect
     }
 
     public void ActivateLoseScreen()
     {
-        loseScreen.SetActive(true);
+        // TODO: Make lose game effect
     }
 
     public void ActivateMainMenu()
     {
-        DeactivateModals();
         board.DestroyBoard();
         mainMenu.SetActive(true);
-        titleHeader.SetActive(false);
+        gameUI.SetActive(false);
     }
 
-    private void DeactivateModals()
+    private void ActivateGameUI()
     {
+        difficultyText.text = difficulty.ToString();
+        difficultyText.color =
+            DifficultyParser.GetTextColorByDifficulty(difficulty);
+        bombCountText.text = 
+            DifficultyParser.GetBombCountByDifficulty(difficulty).ToString();
         mainMenu.SetActive(false);
-        winScreen.SetActive(false);
-        loseScreen.SetActive(false);
-        titleHeader.SetActive(true);
+        gameUI.SetActive(true);
     }
 }

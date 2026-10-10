@@ -9,10 +9,10 @@ public class BoardController : MonoBehaviour
     [SerializeField] private Tile tile;
 
     // Normalized percentage of cell size relative to board screenSize / width
-    private const float CELL_PROPORTION = 0.75f;
+    private const float CELL_PROPORTION = 0.85f;
 
     // Normalized percentage of tile size relative to cell size
-    private const float TILE_PROPORTION = 0.8f;
+    private const float TILE_PROPORTION = 0.9f;
 
     private const float TILE_REVEAL_DELAY = 0.01f;
 
@@ -22,7 +22,7 @@ public class BoardController : MonoBehaviour
 
     private int boardWidth;
 
-    private int numBombs;
+    private int bombCount;
 
     private int maxRevealedTiles;
 
@@ -87,26 +87,9 @@ public class BoardController : MonoBehaviour
 
     private void InitializeDifficulty()
     {
-        switch (difficulty)
-        {
-            case Difficulty.Easy:
-                boardWidth = 8;
-                numBombs = 8;
-                break;
-
-            case Difficulty.Normal:
-                boardWidth = 10;
-                numBombs = 16;
-                break;
-
-            default:
-                boardWidth = 12;
-                numBombs = 30;
-                break;
-
-        }
-
-        maxRevealedTiles = boardWidth * boardWidth - numBombs;
+        boardWidth = DifficultyParser.GetBoardWidthByDifficulty(difficulty);
+        bombCount = DifficultyParser.GetBombCountByDifficulty(difficulty);
+        maxRevealedTiles = boardWidth * boardWidth - bombCount;
 }
 
     private void GenerateBombs(Tile clickedTile)
@@ -115,7 +98,7 @@ public class BoardController : MonoBehaviour
         int colT = clickedTile.col;
 
         int bombsPlaced = 0;
-        while (bombsPlaced < numBombs)
+        while (bombsPlaced < bombCount)
         {
             int randRow = Random.Range(0, boardWidth);
             int randCol = Random.Range(0, boardWidth);
