@@ -1,28 +1,33 @@
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 
 public class BoardController : MonoBehaviour
 {
-    [SerializeField] private GameController gameController;
     [SerializeField] private RectTransform canvasRect;
     [SerializeField] private Tile tile;
 
+    private TMP_Text flagCountText;
+
     // Normalized percentage of cell size relative to board screenSize / width
-    private const float CELL_PROPORTION = 0.85f;
+    private const float CELL_PROPORTION = 0.95f;
 
     // Normalized percentage of tile size relative to cell size
-    private const float TILE_PROPORTION = 0.9f;
+    private const float TILE_PROPORTION = 0.95f;
 
     private const float TILE_REVEAL_DELAY = 0.01f;
 
+    private ClickState clickState;
+
     private GameState state;
 
-    private Difficulty difficulty = Difficulty.Easy;
+    private Difficulty difficulty;
 
     private int boardWidth;
 
     private int bombCount;
+    private int flagsRemaining;
 
     private int maxRevealedTiles;
 
@@ -31,14 +36,16 @@ public class BoardController : MonoBehaviour
     private bool[,] bombs;
     private Tile[,] tiles;
 
-    public void Setup()
+    public void Setup(TMP_Text flagCountText)
     {
-        Setup(difficulty);
+        Setup(difficulty, flagCountText);
     }
 
-    public void Setup(Difficulty difficulty)
+    public void Setup(Difficulty difficulty, TMP_Text flagCountText)
     {
         this.difficulty = difficulty;
+        this.flagCountText = flagCountText;
+        
         InitializeDifficulty();
 
         state = GameState.Ready;
@@ -72,9 +79,23 @@ public class BoardController : MonoBehaviour
         }
     }
 
+    public void SetClickState(ClickState clickState)
+    {
+        this.clickState = clickState;
+    }
+
     public void TileClicked(Tile clickedTile)
     {
         if (state != GameState.Ready && state != GameState.Playing)
+            return;
+
+        if (clickState == ClickState.Flag)
+        {
+            FlagTile(clickedTile);
+            return;
+        }
+
+        if (clickedTile.isFlagged)
             return;
 
         if (state == GameState.Ready) {
@@ -90,6 +111,7 @@ public class BoardController : MonoBehaviour
         boardWidth = DifficultyParser.GetBoardWidthByDifficulty(difficulty);
         bombCount = DifficultyParser.GetBombCountByDifficulty(difficulty);
         maxRevealedTiles = boardWidth * boardWidth - bombCount;
+        flagsRemaining = bombCount;
 }
 
     private void GenerateBombs(Tile clickedTile)
@@ -114,12 +136,35 @@ public class BoardController : MonoBehaviour
         }
     }
 
+    private void FlagTile(Tile clickedTile)
+    {
+        if (clickedTile.isRevealed)
+            return;
+
+        if (clickedTile.isFlagged == false)
+        {
+            if (flagsRemaining == 0)
+            {
+                return;
+            }
+            flagsRemaining--;
+        }
+        else
+        {
+            flagsRemaining++;
+        }
+
+        flagCountText.text = flagsRemaining.ToString();
+        clickedTile.ToggleFlag();
+    }
+
     private void RevealTile(Tile clickedTile)
     {
-        if (clickedTile.isRevealed) return;
+        if (clickedTile.isRevealed || clickedTile.isFlagged) return;
 
         if (clickedTile.isBomb)
         {
+            clickedTile.Explode();
             LoseGame();
             return;
         }
@@ -151,18 +196,16 @@ public class BoardController : MonoBehaviour
         RevealAllBombs();
         state = GameState.GameOver;
         DisableBoardButtons();
-        gameController.ActivateWinScreen();
     }
 
     private void LoseGame()
     {
-        RevealAllBombs();
+        RevealAllBombs(false);
         state = GameState.GameOver;
         DisableBoardButtons();
-        gameController.ActivateLoseScreen();
     }
 
-    private void RevealAllBombs()
+    private void RevealAllBombs(bool wonGame = true)
     {
         for (int row = 0; row < boardWidth; row++)
         {
@@ -170,7 +213,7 @@ public class BoardController : MonoBehaviour
             {
                 if (bombs[row, col] == true)
                 {
-                    tiles[row, col].RevealBomb();
+                    tiles[row, col].RevealBomb(wonGame);
                 }
             }
         }
@@ -224,8 +267,11 @@ public class BoardController : MonoBehaviour
 
         while (queue.Count > 0)
         {
+            if (state == GameState.GameOver)
+                yield break;
+
             Tile curT = queue.Dequeue();
-            if (!curT.isRevealed)
+            if (!curT.isRevealed && !curT.isFlagged)
             {
                 curT.Reveal(GetAdjacentBombs(curT).Count);
                 IncremenetRevealedTiles();
@@ -234,6 +280,11 @@ public class BoardController : MonoBehaviour
 
                 foreach (Tile t in adjTiles)
                 {
+                    if (state == GameState.GameOver)
+                        yield break;
+
+                    if (t.isFlagged) continue;
+
                     int adjBombsCount = GetAdjacentBombs(t).Count;
                     if (adjBombsCount == 0)
                     {

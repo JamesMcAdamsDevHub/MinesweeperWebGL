@@ -1,3 +1,4 @@
+using System;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -8,14 +9,17 @@ public class GameController : MonoBehaviour
     [SerializeField] private GameObject mainMenu;
     [SerializeField] private GameObject gameUI;
     [SerializeField] private TMP_Text bombCountText;
+    [SerializeField] private TMP_Text flagCountText;
     [SerializeField] private TMP_Text difficultyText;
+    [SerializeField] private Button revealButton;
+    [SerializeField] private Button flagButton;
 
     private Difficulty difficulty = Difficulty.Normal;
 
     public void StartNewGame()
     {
         ActivateGameUI();
-        board.Setup();
+        board.Setup(flagCountText);
     }
 
     public void StartNewGame(string difficultyStr)
@@ -25,17 +29,7 @@ public class GameController : MonoBehaviour
 
         ActivateGameUI();
 
-        board.Setup(difficulty);
-    }
-
-    public void ActivateWinScreen()
-    {
-        // TODO: Make win game effect
-    }
-
-    public void ActivateLoseScreen()
-    {
-        // TODO: Make lose game effect
+        board.Setup(difficulty, flagCountText);
     }
 
     public void ActivateMainMenu()
@@ -45,6 +39,14 @@ public class GameController : MonoBehaviour
         gameUI.SetActive(false);
     }
 
+    public void SetFlagging(bool flag)
+    {
+        revealButton.image.color = flag ? Color.dimGray : Color.purple;
+        flagButton.image.color = flag ? Color.purple : Color.dimGray;
+
+        board.SetClickState(flag ? ClickState.Flag : ClickState.Reveal);
+    }
+
     private void ActivateGameUI()
     {
         difficultyText.text = difficulty.ToString();
@@ -52,6 +54,8 @@ public class GameController : MonoBehaviour
             DifficultyParser.GetTextColorByDifficulty(difficulty);
         bombCountText.text = 
             DifficultyParser.GetBombCountByDifficulty(difficulty).ToString();
+        flagCountText.text = bombCountText.text;
+        SetFlagging(false);
         mainMenu.SetActive(false);
         gameUI.SetActive(true);
     }

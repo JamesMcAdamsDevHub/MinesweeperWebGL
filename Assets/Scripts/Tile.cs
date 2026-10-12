@@ -7,16 +7,16 @@ public class Tile : MonoBehaviour
 {
     [SerializeField] private Button button;
     [SerializeField] private TMP_Text text;
+    [SerializeField] private GameObject FlagIcon;
+    [SerializeField] private GameObject BombIcon;
+    [SerializeField] private GameObject ExplosionIcon;
 
     public int row;
     public int col;
 
     public bool isBomb = false;
     public bool isRevealed = false;
-
-    public int numAdjacentBombs = 0;
-
-    private const string BOMB = "BOMB";
+    public bool isFlagged = false;
 
     private BoardController board;
 
@@ -44,7 +44,6 @@ public class Tile : MonoBehaviour
 
     public void Reveal(int adjBombs)
     {
-        numAdjacentBombs = adjBombs;
         string tileText = adjBombs == 0 ? "" : adjBombs.ToString();
         if (adjBombs > 0)
         {
@@ -78,12 +77,19 @@ public class Tile : MonoBehaviour
             }
             text.color = textColor;
         }
-        UpdateRevealedTile(tileText.ToString(), Color.gray);
+        UpdateRevealedTile(Color.gray, tileText);
     }
 
-    public void RevealBomb()
+    public void RevealBomb(bool wonGame)
     {
-        UpdateRevealedTile(BOMB, Color.red);
+        if (isFlagged)
+        {
+            UpdateRevealedTile(Color.green);
+            return;
+        }
+
+        BombIcon.SetActive(!ExplosionIcon.activeSelf);
+        UpdateRevealedTile(wonGame ? Color.green : Color.red);
     }
 
     public void DisableButton()
@@ -91,17 +97,23 @@ public class Tile : MonoBehaviour
         button.interactable = false;
     }
 
-    private void UpdateRevealedTile(string tileText, Color color)
+    public void ToggleFlag()
+    {
+        if (isRevealed) return;
+
+        isFlagged = !isFlagged;
+        FlagIcon.SetActive(isFlagged);
+    }
+
+    public void Explode()
+    {
+        ExplosionIcon.SetActive(true);
+    }
+
+    private void UpdateRevealedTile(Color color, string tileText = "")
     {
         isRevealed = true;
-        if (tileText.Equals(BOMB))
-        {
-            text.text = "*";
-        }
-        else
-        {
-            text.text = tileText;
-        }
+        text.text = tileText;
         button.image.color = color;
         DisableButton();
     }
